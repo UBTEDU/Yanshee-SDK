@@ -132,7 +132,7 @@ static int _udpServerInit(int *piPort, int iTimeout)
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0)
     {
-        printf("create socket failed!\r\n");
+        DebugTrace("Create new socket failed!\r\n");
         return -1;
     }
 
@@ -142,7 +142,7 @@ static int _udpServerInit(int *piPort, int iTimeout)
     }
     if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tsock, sizeof(tsock)) < 0)
     {
-        printf("Set SO_RCVTIMEO setsockopt error:%s\r\n", strerror(errno));
+        DebugTrace("Set SO_RCVTIMEO setsockopt failed. %s\r\n", strerror(errno));
         return -1;
     }
     DebugTrace("Set SO_RCVTIMEO:%ld s\r\n", tsock.tv_sec);
@@ -164,11 +164,12 @@ static int _udpServerInit(int *piPort, int iTimeout)
         }
         else if (EADDRINUSE == errno)
         {
-            printf(" udp iPort:%d in use!\r\n", iPort);
+            /* The current port is used, try to use another one */
+            continue;
         }
         else
         {
-            printf("udp server bind failed!\r\n");
+            DebugTrace("Bind new UDP fd failed!\r\n");
         }
     }
 
@@ -207,7 +208,7 @@ static int _ubtMsgSend2Robot(int iFd, char *pcIpAddr, int iPort, char *pcBuf, in
     iRet = sendto(iFd, pcBuf, iLen, 0, (struct sockaddr *) &stAddr, sizeof(struct sockaddr));
     if (-1 == iRet)
     {
-        printf("Send message error. %s\r\n", strerror(errno));
+        DebugTrace("Send message error. %s\r\n", strerror(errno));
     }
     return iRet;
 }
@@ -267,7 +268,7 @@ static int _ubtSendUDPMsg(char *pcIP, int iPort, char *pcBuffer, int iLen)
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0)
     {
-        printf("UDP socket open failed!");
+        DebugTrace("Open UDP socket failed!");
         return -1;
     }
 
@@ -276,13 +277,13 @@ static int _ubtSendUDPMsg(char *pcIP, int iPort, char *pcBuffer, int iLen)
     addr.sin_addr.s_addr = inet_addr(pcIP);
     if (addr.sin_addr.s_addr == INADDR_NONE)
     {
-        printf("%s error ip", __FUNCTION__);
+        DebugTrace("Invalid IP address.\n");
         close(fd);
         return -1;
     }
 
     sendto(fd, pcBuffer, iLen, 0, (struct sockaddr *) &addr, addr_len);
-    DebugTrace("%s: Send to:%s iPort:%d, Buffer[%d]:%s \n", __FUNCTION__, pcIP, iPort, iLen, pcBuffer);
+    DebugTrace("Send to:%s iPort:%d, Buffer[%d]:%s \n", pcIP, iPort, iLen, pcBuffer);
 
     close(fd);
     return 0;
@@ -308,7 +309,7 @@ static UBT_RC_T _ubtCommWithRobot(char *pcIpAddr, char *pcBuffer, int iBufLen, i
     iSocketFd = _udpServerInit(&iPort, iTimeout);
     if (iSocketFd < 0)
     {
-        printf("Create robot to SDK socket failed!\r\n");
+        DebugTrace("Create robot to SDK socket failed!\r\n");
         return UBT_RC_SOCKET_FAILED;
     }
 
@@ -342,7 +343,7 @@ static UBT_RC_T _ubtCommWithRobot(char *pcIpAddr, char *pcBuffer, int iBufLen, i
     iRet = _ubtSendUDPMsg(pcIpAddr, iPort, acSocketBuffer, strlen(acSocketBuffer));
     if (iRet < 0)
     {
-        printf("Send  UDP Msg failed!\r\n");
+        DebugTrace("Send UDP msg failed!\r\n");
         return UBT_RC_SOCKET_SENDERROR;
     }
 
@@ -351,7 +352,7 @@ static UBT_RC_T _ubtCommWithRobot(char *pcIpAddr, char *pcBuffer, int iBufLen, i
     do
     {
         iRet = recvfrom(iSocketFd, pcBuffer, iBufLen, 0, (struct sockaddr *) &stAddr, (socklen_t *) &iAddrLen);
-        DebugTrace("SDK Received from %s, Buffer[Len:%d] %s, \n", inet_ntoa(stAddr.sin_addr), iRet, pcBuffer);
+        DebugTrace("Received msg from %s, Buffer[Len:%d] %s, \n", inet_ntoa(stAddr.sin_addr), iRet, pcBuffer);
         if (iRet <= 0)
         {
             if (errno == EINTR)   //(errno == EAGAIN))
@@ -391,14 +392,13 @@ static void *_ubtTimerTimeout()
 
     if (!strcmp(acIPAddr, SDK_LOCAL_IP))
     {
-        DebugTrace("The target IP is %s. Heartbeat message will not be sent!\n", SDK_LOCAL_IP);
         return NULL;
     }
 
     pJsonRoot = cJSON_CreateObject();
     if (pJsonRoot == NULL)
     {
-        printf("Failed to create json message!\r\n");
+        DebugTrace("Failed to create json message!\r\n");
         return NULL;
     }
 
@@ -449,7 +449,7 @@ static int _ubtTranslat(char c)
 
 /**
  * @brief:      _ubt_getAngle
- * @details:    just get one servo angle
+ * @details:    Get angle by id
  * @param[in]   char *pcAllAngle
  * @param[in]   int  iAngleID
  * @param[out]  int
@@ -462,12 +462,11 @@ static int _ubt_getAngle(char *pcAllAngle, int iAngleID)
     iLen = strlen(pcAllAngle);
     if (iLen == 0)
     {
-        printf("get Angle null");
+        DebugTrace("No angle data.");
         return iValue;
     }
     else if (iLen < iAngleID * 2)
     {
-        printf("get %d Angle null", iAngleID);
         return iValue;
     }
 
@@ -495,7 +494,6 @@ UBT_RC_T _ubtSetServosAngle(int iIndexMask, char *pcAngle, int iTime)
 
     if (strlen(pcAngle) <= 0)
     {
-        printf("ERR: angle buffer is null!\r\n");
         return UBT_RC_WRONG_PARAM;
     }
 
@@ -547,7 +545,7 @@ static int _ubtSetServoAngle(char *pcAllAngle, int iAngle, int iServoID)
 
     if ((iAngle > 180) || (iAngle < 0))
     {
-        printf("ERR: Servo %d value is out of range! \r\n", iServoID);
+        DebugTrace("Wrong parameter! Please check the value of servo %d\n", iServoID);
         return -1;
     }
     else if (iAngle == 0)
@@ -590,7 +588,7 @@ _ubt_CreateMotionFrame(char *pcFrame, const char *pcAngle, int iServoMask, int i
             offset += 2;
             if (offset > strlen(pcAngle))
             {
-                printf("ERR: Servo angle buffer not match\r\n");
+                DebugTrace("ERR: Servo angle buffer not match\r\n");
                 pcFrame[8 + i] = 0xFF;
             }
             else
@@ -1104,13 +1102,11 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
 
     if (pcType == NULL)
     {
-        printf("SetRobotMotion pcType is null!\r\n");
         return UBT_RC_WRONG_PARAM;
     }
 
     if (iSpeed <= 0 || iSpeed > 6)
     {
-        printf("SetRobotMotion iSpeed is outrange(1~6)\r\n");
         return UBT_RC_WRONG_PARAM;
     }
     speed = SERVO_MAX_LOW_SPEED / iSpeed;
@@ -1120,7 +1116,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
     snprintf(acFullName, sizeof(acFullName), "/mnt/1xrobot/tmp/motion%d.hts", (int) (50.0 * rand() / (RAND_MAX + 1.0)));
     if ((fd = fopen(acFullName, "wb+")) == NULL)
     {
-        printf("SetRobotMotion create file failed!\r\n");
+        DebugTrace("Open motion file failed!\n");
         return UBT_RC_NORESOURCE;
     }
 
@@ -1181,7 +1177,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("raise direct[%s]  error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1218,7 +1214,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("stretch direct:%s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1264,7 +1260,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("come on direct:%s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1310,7 +1306,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("wave direct %s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1338,7 +1334,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("bend direct %s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1411,7 +1407,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("work direct:%s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1445,7 +1441,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("turn round direct %s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             goto ERR;
         }
     }
@@ -1474,7 +1470,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
         }
         else
         {
-            printf("head direct:%s error\r\n", pcDirect);
+            printf("Wrong direction %s for motion %s.\n", pcDirect, pcType);
             return UBT_RC_WRONG_PARAM;
         }
     }
@@ -1498,7 +1494,7 @@ UBT_RC_T ubtSetMotion(char *pcType, char *pcDirect, int iSpeed, int iRepeat)
     }
     else
     {
-        printf("The Type[%s] motion is unsurpport!\r\n", pcType);
+        printf("Unsupported motion! Type: %s", pcType);
         goto ERR;
     }
 
@@ -1714,8 +1710,46 @@ UBT_RC_T ubtSetRobotLED(char *pcType, char *pcColor, char *pcMode)
 }
 
 /**
+ * @brief:      ubtAsynStartAction
+ * @details:    Execute a default action asynchronous
+ * @param[in]   char *pcName  The action file's name For
+ *                              example: push up, bow
+ * @param[in]   int iRepeat   Repeat times. 0 means infinite
+ * @param[out]  None
+ * @retval:
+ */
+UBT_RC_T ubtAsynStartAction(char *pcName, int iRepeat)
+{
+    int      iTime  = 0;
+    UBT_RC_T ubtRet = UBT_RC_FAILED;
+    char     acSocketBuffer[SDK_MESSAGE_MAX_LEN];
+
+    if (NULL == pcName)
+    {
+        return UBT_RC_WRONG_PARAM;
+    }
+    acSocketBuffer[0] = '\0';
+    ubtRet = ubtRobot_Msg_Encode_StartRobotAction(g_iRobot2SDKPort, pcName, iRepeat,
+                                                  acSocketBuffer, sizeof(acSocketBuffer));
+    if (UBT_RC_SUCCESS != ubtRet)
+    {
+        return ubtRet;
+    }
+
+    ubtRet = _ubtCommWithRobot(g_stConnectedRobotInfo.acIpAddr, acSocketBuffer, sizeof(acSocketBuffer), 0);
+    if (UBT_RC_SUCCESS != ubtRet)
+    {
+        return ubtRet;
+    }
+
+    ubtRet = ubtRobot_Msg_Decode_StartRobotAction(acSocketBuffer, &iTime);
+
+    return ubtRet;
+}
+
+/**
  * @brief:      ubtStartAction
- * @details:    Let the robot play an action
+ * @details:    Execute a default action
  * @param[in]   char *pcName  The action file's name For
  *                              example: push up, bow
  * @param[in]   int iRepeat   Repeat times. 0 means infinite
@@ -1936,8 +1970,6 @@ UBT_RC_T ubtEventDetect(char *pcEventType, char *pcValue, int iTimeout)
     char           acSocketBuffer[SDK_MESSAGE_MAX_LEN];
     struct timeval tsock  = {30, 0};
 
-    DebugTrace("ubtEventDetect called! iTimeout = %d ", iTimeout);
-
     if (NULL == pcEventType)
     {
         return UBT_RC_WRONG_PARAM;
@@ -2045,14 +2077,13 @@ UBT_RC_T ubtConnectRobot(char *pcIpAddr)
         iRet = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         if (iRet != 0)
         {
-            printf("pthread_attr_setdetachstate error \n");
             return UBT_RC_FAILED;
         }
         /* Start the heart beat timer every 5 seconds */
         iRet = pthread_create(&pid, &attr, _ubtTimerTimeout, NULL);
         if (iRet < 0)
         {
-            printf("pthread_create failed \n");
+            DebugTrace("Create new thread failed.\n");
             return UBT_RC_FAILED;
         }
     }
@@ -2203,7 +2234,7 @@ UBT_RC_T ubtInitialize()
     iSocketFd = _udpServerInit(&iPort, 0);
     if (iSocketFd < 0)
     {
-        printf("Create robot to SDK socket failed!\r\n");
+        DebugTrace("Create socket failed!\n");
         return UBT_RC_SOCKET_FAILED;
     }
     g_iRobot2SDKPort = iPort;
@@ -2213,7 +2244,7 @@ UBT_RC_T ubtInitialize()
     iSocketFd = socket(AF_INET, SOCK_DGRAM, 0);
     if (iSocketFd < 0)
     {
-        printf("Create socket to robot failed!\r\n");
+        DebugTrace("Create socket failed!\n");
         return UBT_RC_SOCKET_FAILED;
     }
     g_iSDK2Robot = iSocketFd;

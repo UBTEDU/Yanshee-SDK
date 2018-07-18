@@ -195,6 +195,17 @@ UBT_RC_T ubtReadSensorValueByAddr(char *pcSensorType, int iAddr, void *pValue, i
 UBT_RC_T ubtSetRobotLED(char *pcType, char *pcColor, char *pcMode);
 
 /**
+ * @brief:      ubtAynsStartAction
+ * @details:    Execute a default action asynchronous
+ * @param[in]   char *pcName  The action file's name For
+ *                              example: push up, bow
+ * @param[in]   int iRepeat   Repeat times. 0 means infinite
+ * @param[out]  None
+ * @retval:
+ */
+UBT_RC_T ubtAsynStartAction(char *pcName, int iRepeat);
+
+/**
  * @brief      ubtStartAction
  * @details    Let the robot play an action
  * @param[in]   pcName  The action file's name For

@@ -12,17 +12,16 @@ if (0 != ret):
 	exit(1)
 
 #---------------------------Dooneoftheaction-----------------------------------
-#pcName = ['Forward','Hit left','Hit right','Left slide tackle','reset','Right']
-pcName = ['reset']
+pcName = ['Forward']
 iRepeat = 1
 for name in pcName:
     print("Start the action now, action name: %s", name)
-    ret = yanshee_api.ubtStartAction(name,iRepeat)
+    ret = yanshee_api.ubtStartAction(name, iRepeat)
     if ret != 0:
         print("Can not start robot action! Error Code: %d" % ret)
         exit(3)
-#time.sleep(3)
 
+time.sleep(3)
 print("Stop the action now")
 ret = yanshee_api.ubtStopAction()
 if ret != 0:
@@ -30,8 +29,6 @@ if ret != 0:
     exit(3)
 else:
     print("Stop success")
-    #print("Current action: %s" % name)
-    #time.sleep(2)
 
 #---------------------------Disconnect--------------------------------------
 yanshee_api.ubtDisconnectRobot("127.0.0.1")
