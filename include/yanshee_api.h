@@ -46,17 +46,16 @@ UBT_RC_T ubtGetSWVersion(UBT_ROBOT_SOFTVERSION_TYPE_E eType, char *pcVersion, in
 UBT_RC_T ubtGetPowerStatus(int *piVoltage, int *piRechargeStatus, int *piCapacity);
 
 /**
- * @brief:      ubtRecordMotion
- * @details:    Read all servo's angle
- * @param[in]   UBT_ROBOTSERVO_T *pstServosAngle
- * @param[out]  None
- * @retval: UBT_RC_T
+ * @brief       ubtRecordMotion
+ * @details     Read all servo's angle
+ * @param[in]   pstServosAngle All servos angle
+ * @retval      UBT_RC_T
  */
 UBT_RC_T ubtRecordMotion(UBT_ROBOTSERVO_T *pstServosAngle);
 
 /**
  * @brief:      ubtGetServosAngle
- * @details:    Read one/multiple/all servo's angle
+ * @details     Read one/multiple/all servo's angle
  * @param[in]   pstServoAngle	The angle for the servos, details please see UBT_ROBOTSERVO_T
  *                  bit 0 indicates the first servo's angle.
  *                  FF means the invalid value.
@@ -66,8 +65,8 @@ UBT_RC_T ubtGetServosAngle(UBT_ROBOTSERVO_T *pstServoAngle);
 
 
 /**
- * @brief:      ubtSetServosAngle
- * @details:    Set the servo's acAngle with speed
+ * @brief       ubtSetServosAngle
+ * @details     Set the servo's acAngle with speed
  * @param[in]   pstServoAngle   The angle for the servos, details please see UBT_ROBOTSERVO_T
  * @param[in]   iTime       It is the time for servo, the value is smaller, the speed is faster.
  * @retval		UBT_RC_T
@@ -195,13 +194,12 @@ UBT_RC_T ubtReadSensorValueByAddr(char *pcSensorType, int iAddr, void *pValue, i
 UBT_RC_T ubtSetRobotLED(char *pcType, char *pcColor, char *pcMode);
 
 /**
- * @brief:      ubtAynsStartAction
- * @details:    Execute a default action asynchronous
- * @param[in]   char *pcName  The action file's name For
+ * @brief      ubtAynsStartAction
+ * @details    Execute a default action asynchronous
+ * @param[in]   pcName  The action file's name For
  *                              example: push up, bow
- * @param[in]   int iRepeat   Repeat times. 0 means infinite
- * @param[out]  None
- * @retval:
+ * @param[in]   iRepeat   Repeat times. 0 means infinite
+ * @retval      UBT_RC_T
  */
 UBT_RC_T ubtAsynStartAction(char *pcName, int iRepeat);
 

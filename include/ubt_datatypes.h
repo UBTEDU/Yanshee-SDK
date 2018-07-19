@@ -245,7 +245,7 @@ typedef struct _RobotBatteryInfo
 */
 typedef struct _RobotVersionInfo
 {
-    char	acVersion[UBT_ROBOT_VERSION_LEN];
+    char	acVersion[UBT_ROBOT_VERSION_LEN];   /**< Robot version string */
 } UBT_ROBOT_VERSION_T;
 
 #endif /* __UBT_DATATYPES_H__ */
