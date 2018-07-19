@@ -67,7 +67,7 @@ This is an example of how to control the robot to hit left. There are some other
 
 ```bash
 cd $YANSHEE_SDK/output/python/example
-python ubtStartRobotAction.py
+python ubtStartAction.py
 ```
 
 
